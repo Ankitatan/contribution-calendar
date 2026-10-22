@@ -7,6 +7,22 @@
 <title>GitHub Contribution Calendar</title>
 
 <style>
+
+.github-button {
+  display: inline-block;
+  padding: 10px 20px;
+  background: #7c3aed;
+  color: #ffffff;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: bold;
+  transition: background 0.3s ease;
+}
+
+.github-button:hover {
+  background: #6d28d9;
+}
+  
 body {
   background: #0d1117;
   color: #e6edf3;
@@ -125,10 +141,11 @@ async function loadCalendar() {
         details.innerHTML = `
           <strong>${date}</strong>
           <p>${day.count} contribution${day.count === 1 ? "" : "s"}</p>
-          <a href="https://github.com/${username}?tab=overview"
-             target="_blank" rel="noopener">
-            View activity on GitHub →
-          </a>
+          <a class="github-button"
+   href="https://github.com/${username}?tab=overview"
+   target="_blank" rel="noopener">
+  View Activity on GitHub →
+</a>
         `;
       };
 
