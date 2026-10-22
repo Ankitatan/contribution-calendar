@@ -1,0 +1,141 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GitHub Contribution Calendar</title>
+
+<style>
+body {
+  background: #0d1117;
+  color: #e6edf3;
+  font-family: Arial, sans-serif;
+  padding: 30px;
+  max-width: 1000px;
+  margin: auto;
+}
+h1 { color: #c4b5fd; }
+.panel {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+}
+#calendar {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, 15px);
+  grid-auto-columns: 15px;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 12px 0;
+}
+.day {
+  width: 15px;
+  height: 15px;
+  border-radius: 3px;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+}
+.day:hover, .day:focus { outline: 2px solid white; }
+.level0 { background: #21262d; }
+.level1 { background: #6d28d9; }
+.level2 { background: #7c3aed; }
+.level3 { background: #a78bfa; }
+.level4 { background: #ddd6fe; }
+a { color: #c4b5fd; }
+#details { line-height: 1.8; }
+</style>
+</head>
+
+<body>
+<h1>✨ Contribution Activity</h1>
+<p>Click any square to explore your contributions.</p>
+
+<div class="panel">
+  <strong id="summary">Loading contributions...</strong>
+  <div id="calendar"></div>
+  <small>Less
+    <span style="color:#21262d">■</span>
+    <span style="color:#6d28d9">■</span>
+    <span style="color:#7c3aed">■</span>
+    <span style="color:#a78bfa">■</span>
+    <span style="color:#ddd6fe">■</span>
+    More
+  </small>
+</div>
+
+<div class="panel" id="details">
+  <strong>Select a day</strong>
+  <p>Your date and contribution details will appear here.</p>
+</div>
+
+<p>
+  <a href="https://github.com/Ankitatan"
+     target="_blank" rel="noopener">
+    View GitHub profile →
+  </a>
+</p>
+
+<script>
+const username = "Ankitatan";
+const calendar = document.getElementById("calendar");
+const details = document.getElementById("details");
+
+async function loadCalendar() {
+  try {
+    const response = await fetch(
+      `https://github-contributions-api.jogruber.de/v4/${username}?y=last`
+    );
+    if (!response.ok) throw new Error("Contribution data unavailable");
+
+    const data = await response.json();
+    const days = data.contributions;
+
+    document.getElementById("summary").textContent =
+      `${days.reduce((sum, day) => sum + day.count, 0)} contributions`;
+
+    // Align the first column to Sunday.
+    const firstDay = new Date(days[0].date + "T12:00:00").getDay();
+    for (let i = 0; i < firstDay; i++) {
+      const blank = document.createElement("span");
+      calendar.appendChild(blank);
+    }
+
+    days.forEach(day => {
+      const button = document.createElement("button");
+      button.className = `day level${day.level}`;
+      button.title = `${day.date}: ${day.count} contributions`;
+      button.setAttribute("aria-label", button.title);
+
+      button.onclick = () => {
+        const date = new Date(day.date + "T12:00:00")
+          .toLocaleDateString(undefined, {
+            year: "numeric", month: "long", day: "numeric"
+          });
+
+        details.innerHTML = `
+          <strong>${date}</strong>
+          <p>${day.count} contribution${day.count === 1 ? "" : "s"}</p>
+          <a href="https://github.com/${username}?tab=overview"
+             target="_blank" rel="noopener">
+            View activity on GitHub →
+          </a>
+        `;
+      };
+
+      calendar.appendChild(button);
+    });
+  } catch (error) {
+    document.getElementById("summary").textContent =
+      "Unable to load contributions. Please try again later.";
+  }
+}
+
+loadCalendar();
+</script>
+</body>
+</html>
