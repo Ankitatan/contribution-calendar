@@ -6,38 +6,10 @@
 <title>GitHub Contribution Calendar</title>
 
 <style>
-* { box-sizing: border-box; }
-
-
-  .day {
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
+* {
   box-sizing: border-box;
-  background-color: #21262d;
-  border: 1px solid #30363d;
 }
 
-.day.level-1 {
-  background-color: #c4b5fd;
-  border-color: #c4b5fd;
-}
-
-.day.level-2 {
-  background-color: #a78bfa;
-  border-color: #a78bfa;
-}
-
-.day.level-3 {
-  background-color: #8b5cf6;
-  border-color: #8b5cf6;
-}
-
-.day.level-4 {
-  background-color: #6d28d9;
-  border-color: #6d28d9;
-}
-  
 body {
   margin: 0;
   padding: 25px 12px;
@@ -145,21 +117,62 @@ select {
   width: 15px;
   height: 15px;
   padding: 0;
-  border: 1px solid transparent;
+  border: 1px solid #30363d;
   border-radius: 3px;
   cursor: pointer;
+  background: #21262d;
 }
 
-.level0 { background: #21262d; }
-.level1 { background: #6d28d9; }
-.level2 { background: #7c3aed; }
-.level3 { background: #a78bfa; }
-.level4 { background: #ddd6fe; }
+.day.level0 {
+  background: #21262d;
+  border-color: #30363d;
+}
 
-/* Alternate months use outlined squares */
-.day.alternate-month {
+.day.level1 {
+  background: #c4b5fd;
+  border-color: #c4b5fd;
+}
+
+.day.level2 {
+  background: #a78bfa;
+  border-color: #a78bfa;
+}
+
+.day.level3 {
+  background: #8b5cf6;
+  border-color: #8b5cf6;
+}
+
+.day.level4 {
+  background: #6d28d9;
+  border-color: #6d28d9;
+}
+
+/* Alternate months: outlined when there are no contributions. */
+.day.alternate-month.level0 {
   background: transparent;
-  border: 1px solid #8b7aa8;
+  border-color: #8b7aa8;
+}
+
+/* Keep contribution colors visible in outlined months too. */
+.day.alternate-month.level1 {
+  background: #c4b5fd;
+  border-color: #c4b5fd;
+}
+
+.day.alternate-month.level2 {
+  background: #a78bfa;
+  border-color: #a78bfa;
+}
+
+.day.alternate-month.level3 {
+  background: #8b5cf6;
+  border-color: #8b5cf6;
+}
+
+.day.alternate-month.level4 {
+  background: #6d28d9;
+  border-color: #6d28d9;
 }
 
 .day:hover,
@@ -184,6 +197,11 @@ select {
   cursor: default;
 }
 
+.legend .day.alternate-month {
+  background: transparent;
+  border-color: #8b7aa8;
+}
+
 .details {
   min-height: 75px;
   padding: 15px;
@@ -201,7 +219,9 @@ a {
   text-decoration: none;
 }
 
-a:hover { text-decoration: underline; }
+a:hover {
+  text-decoration: underline;
+}
 
 .profile-link {
   display: block;
@@ -214,13 +234,16 @@ a:hover { text-decoration: underline; }
 }
 
 @media (max-width: 600px) {
-  .panel { padding: 16px 10px; }
+  .panel {
+    padding: 16px 10px;
+  }
 }
 </style>
 </head>
 
 <body>
 <div class="panel">
+
   <h2>GitHub Contribution Calendar</h2>
 
   <p class="subtitle">
@@ -232,13 +255,16 @@ a:hover { text-decoration: underline; }
 
   <div class="controls">
     <label for="yearSelect">Select year:</label>
-    <select id="yearSelect"></select>
+    <select id="yearSelect">
+      <option value="">Loading years...</option>
+    </select>
   </div>
 
   <div id="status">Loading contribution data...</div>
 
   <div class="calendar-scroll">
     <div class="calendar-layout">
+
       <div class="weekdays">
         <span>Sun</span>
         <span></span>
@@ -253,6 +279,7 @@ a:hover { text-decoration: underline; }
         <div id="months" class="months"></div>
         <div id="calendar" class="grid"></div>
       </div>
+
     </div>
   </div>
 
@@ -265,6 +292,7 @@ a:hover { text-decoration: underline; }
     <span class="day level4"></span>
     <span class="day alternate-month"></span>
     <span>Outlined month</span>
+    <span>More</span>
   </div>
 
   <div id="details" class="details">
@@ -276,10 +304,14 @@ a:hover { text-decoration: underline; }
      target="_blank" rel="noopener noreferrer">
     View GitHub Profile
   </a>
+
 </div>
 
 <script>
+"use strict";
+
 const username = "Ankitatan";
+const firstYear = 2015;
 const currentYear = new Date().getFullYear();
 
 const yearSelect = document.getElementById("yearSelect");
@@ -293,19 +325,56 @@ const monthNames = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 ];
 
-// Populate the year dropdown.
-for (let year = currentYear; year >= 2015; year--) {
-  const option = document.createElement("option");
-  option.value = year;
-  option.textContent = year;
-  yearSelect.appendChild(option);
+/* Populate dropdown immediately, independently of the API. */
+function populateYears() {
+  yearSelect.replaceChildren();
+
+  for (let year = currentYear; year >= firstYear; year--) {
+    yearSelect.add(new Option(String(year), String(year)));
+  }
+
+  yearSelect.value = String(currentYear);
 }
 
-yearSelect.value = currentYear;
-
 yearSelect.addEventListener("change", () => {
-  loadContributions(Number(yearSelect.value));
+  const year = Number(yearSelect.value);
+
+  if (year) {
+    loadContributions(year);
+  }
 });
+
+function formatDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+/* Fallback levels when the API does not provide a usable level. */
+function getLevel(count, apiLevel) {
+  if (count <= 0) return 0;
+
+  const suppliedLevel = Number(apiLevel);
+
+  if (
+    apiLevel !== undefined &&
+    apiLevel !== null &&
+    apiLevel !== "" &&
+    Number.isFinite(suppliedLevel) &&
+    suppliedLevel >= 0 &&
+    suppliedLevel <= 4
+  ) {
+    return suppliedLevel;
+  }
+
+  if (count <= 3) return 1;
+  if (count <= 6) return 2;
+  if (count <= 9) return 3;
+
+  return 4;
+}
 
 async function loadContributions(year) {
   status.textContent = `Fetching ${year} contribution data...`;
@@ -329,22 +398,21 @@ async function loadContributions(year) {
     const result = await response.json();
 
     const days = (result.contributions || []).filter(day =>
+      typeof day.date === "string" &&
       day.date.startsWith(`${year}-`)
     );
 
     if (!days.length) {
-      throw new Error(`No data returned for ${year}.`);
+      throw new Error(`No contribution data returned for ${year}.`);
     }
 
     const dailyData = new Map(
       days.map(day => [day.date, day])
     );
 
-    // Calendar year: January 1 through December 31.
     const start = new Date(year, 0, 1, 12);
     const end = new Date(year, 11, 31, 12);
 
-    // Sunday-first calendar.
     const leadingBlanks = start.getDay();
     const dayCount =
       Math.round((end - start) / 86400000) + 1;
@@ -358,7 +426,7 @@ async function loadContributions(year) {
     months.style.gridTemplateColumns =
       `repeat(${totalColumns}, 15px)`;
 
-    // Leading empty cells.
+    /* Blank spaces before January 1. */
     for (let i = 0; i < leadingBlanks; i++) {
       const blank = document.createElement("span");
       blank.setAttribute("aria-hidden", "true");
@@ -371,25 +439,17 @@ async function loadContributions(year) {
       const date = new Date(start);
       date.setDate(start.getDate() + index);
 
-      const dateString =
-        `${date.getFullYear()}-` +
-        `${String(date.getMonth() + 1).padStart(2, "0")}-` +
-        `${String(date.getDate()).padStart(2, "0")}`;
-
+      const dateString = formatDate(date);
       const apiDay = dailyData.get(dateString);
-      const count = Number(apiDay?.count) || 0;
-      const count = Number(apiDay?.count) || 0;
+      const count = Math.max(0, Number(apiDay?.count) || 0);
+      const level = getLevel(count, apiDay?.level);
 
-const level = count === 0 ? 0
-  : count <= 3 ? 1
-  : count <= 6 ? 2
-  : count <= 9 ? 3
-  : 4;
       annualTotal += count;
 
       const button = document.createElement("button");
       button.type = "button";
       button.className = `day level${level}`;
+
       button.title =
         `${dateString}: ${count} contribution` +
         `${count === 1 ? "" : "s"}`;
@@ -399,14 +459,13 @@ const level = count === 0 ? 0
         `${dateString}, ${count} contributions`
       );
 
-      // January colored, February outlined, alternating monthly.
+      /* Alternate months are outlined only on zero-contribution days. */
       if (date.getMonth() % 2 === 1) {
         button.classList.add("alternate-month");
       }
 
-      // Show only the date and count when a square is clicked.
       button.addEventListener("click", () => {
-        details.textContent = "";
+        details.replaceChildren();
 
         const dateElement = document.createElement("strong");
         dateElement.textContent = dateString;
@@ -421,7 +480,7 @@ const level = count === 0 ? 0
       calendar.appendChild(button);
     }
 
-    // Trailing empty cells.
+    /* Blank spaces after December 31. */
     const trailingBlanks =
       totalColumns * 7 - leadingBlanks - dayCount;
 
@@ -431,20 +490,19 @@ const level = count === 0 ? 0
       calendar.appendChild(blank);
     }
 
-    // Display all 12 months from January to December.
+    /* Position each month label above its first week. */
     for (let month = 0; month < 12; month++) {
       const firstOfMonth = new Date(year, month, 1, 12);
 
-      const column = Math.floor(
-        (
-          leadingBlanks +
-          Math.round((firstOfMonth - start) / 86400000)
-        ) / 7
-      );
+      const dayOffset =
+        Math.round((firstOfMonth - start) / 86400000);
+
+      const column =
+        Math.floor((leadingBlanks + dayOffset) / 7) + 1;
 
       const label = document.createElement("span");
       label.className = "month-label";
-      label.style.gridColumn = String(column + 1);
+      label.style.gridColumn = String(column);
       label.textContent = monthNames[month];
 
       months.appendChild(label);
@@ -454,13 +512,15 @@ const level = count === 0 ? 0
       `${year} · ${annualTotal.toLocaleString()} contributions`;
 
   } catch (error) {
-    console.error(error);
+    console.error("Contribution calendar error:", error);
 
     status.textContent =
-      `Could not load ${year} data. Please try again later.`;
+      `Could not load ${year} data. Check your connection and try again.`;
   }
 }
 
+/* Start dropdown setup before requesting contribution data. */
+populateYears();
 loadContributions(currentYear);
 </script>
 </body>
