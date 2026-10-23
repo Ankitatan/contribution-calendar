@@ -378,11 +378,13 @@ async function loadContributions(year) {
 
       const apiDay = dailyData.get(dateString);
       const count = Number(apiDay?.count) || 0;
-      const level = Math.max(
-            0,
-            Math.min(4, Number(apiDay?.level) || 0)
-        );
+      const count = Number(apiDay?.count) || 0;
 
+const level = count === 0 ? 0
+  : count <= 3 ? 1
+  : count <= 6 ? 2
+  : count <= 9 ? 3
+  : 4;
       annualTotal += count;
 
       const button = document.createElement("button");
