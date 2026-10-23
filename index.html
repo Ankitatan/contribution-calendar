@@ -126,7 +126,7 @@ select {
 .level3 { background: #a78bfa; }
 .level4 { background: #ddd6fe; }
 
-/* Alternate months display outlined squares */
+/* Alternate months use outlined squares */
 .day.alternate-month {
   background: transparent;
   border: 1px solid #8b7aa8;
@@ -263,7 +263,7 @@ const monthNames = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 ];
 
-// Offer calendar years from 2015 through the current year.
+// Populate the year dropdown.
 for (let year = currentYear; year >= 2015; year--) {
   const option = document.createElement("option");
   option.value = year;
@@ -298,7 +298,6 @@ async function loadContributions(year) {
 
     const result = await response.json();
 
-    // Keep only dates belonging to the selected calendar year.
     const days = (result.contributions || []).filter(day =>
       day.date.startsWith(`${year}-`)
     );
@@ -307,13 +306,15 @@ async function loadContributions(year) {
       throw new Error(`No data returned for ${year}.`);
     }
 
-    const dailyData = new Map(days.map(day => [day.date, day]));
+    const dailyData = new Map(
+      days.map(day => [day.date, day])
+    );
 
-    // Build every date from January 1 through December 31.
+    // Calendar year: January 1 through December 31.
     const start = new Date(year, 0, 1, 12);
     const end = new Date(year, 11, 31, 12);
 
-    // Sunday-first grid: align January 1 to its weekday.
+    // Sunday-first calendar.
     const leadingBlanks = start.getDay();
     const dayCount =
       Math.round((end - start) / 86400000) + 1;
@@ -327,7 +328,7 @@ async function loadContributions(year) {
     months.style.gridTemplateColumns =
       `repeat(${totalColumns}, 15px)`;
 
-    // Blank squares before January 1.
+    // Leading empty cells.
     for (let i = 0; i < leadingBlanks; i++) {
       const blank = document.createElement("span");
       blank.setAttribute("aria-hidden", "true");
@@ -341,7 +342,9 @@ async function loadContributions(year) {
       date.setDate(start.getDate() + index);
 
       const dateString =
-        `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+        `${date.getFullYear()}-` +
+        `${String(date.getMonth() + 1).padStart(2, "0")}-` +
+        `${String(date.getDate()).padStart(2, "0")}`;
 
       const apiDay = dailyData.get(dateString);
       const count = Number(apiDay?.count) || 0;
@@ -356,7 +359,9 @@ async function loadContributions(year) {
       button.type = "button";
       button.className = `day level${level}`;
       button.title =
-        `${dateString}: ${count} contribution${count === 1 ? "" : "s"}`;
+        `${dateString}: ${count} contribution` +
+        `${count === 1 ? "" : "s"}`;
+
       button.setAttribute(
         "aria-label",
         `${dateString}, ${count} contributions`
@@ -367,21 +372,24 @@ async function loadContributions(year) {
         button.classList.add("alternate-month");
       }
 
+      // Show only the date and count when a square is clicked.
       button.addEventListener("click", () => {
-        details.innerHTML = `
-          <strong>${dateString}</strong><br>
-          ${count} contribution${count === 1 ? "" : "s"}<br>
-          <a href="https://github.com/${username}?tab=overview"
-             target="_blank" rel="noopener noreferrer">
-            View GitHub activity
-          </a>
-        `;
+        details.textContent = "";
+
+        const dateElement = document.createElement("strong");
+        dateElement.textContent = dateString;
+
+        const countElement = document.createElement("div");
+        countElement.textContent =
+          `${count} contribution${count === 1 ? "" : "s"}`;
+
+        details.append(dateElement, countElement);
       });
 
       calendar.appendChild(button);
     }
 
-    // Add trailing blanks so the calendar ends at a full week.
+    // Trailing empty cells.
     const trailingBlanks =
       totalColumns * 7 - leadingBlanks - dayCount;
 
@@ -391,18 +399,22 @@ async function loadContributions(year) {
       calendar.appendChild(blank);
     }
 
-    // Fixed January–December labels across the full year.
+    // Display all 12 months from January to December.
     for (let month = 0; month < 12; month++) {
       const firstOfMonth = new Date(year, month, 1, 12);
+
       const column = Math.floor(
-        (leadingBlanks +
-          Math.round((firstOfMonth - start) / 86400000)) / 7
+        (
+          leadingBlanks +
+          Math.round((firstOfMonth - start) / 86400000)
+        ) / 7
       );
 
       const label = document.createElement("span");
       label.className = "month-label";
       label.style.gridColumn = String(column + 1);
       label.textContent = monthNames[month];
+
       months.appendChild(label);
     }
 
@@ -411,6 +423,7 @@ async function loadContributions(year) {
 
   } catch (error) {
     console.error(error);
+
     status.textContent =
       `Could not load ${year} data. Please try again later.`;
   }
@@ -420,4 +433,3 @@ loadContributions(currentYear);
 </script>
 </body>
 </html>
-
