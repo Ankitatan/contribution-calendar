@@ -8,6 +8,36 @@
 <style>
 * { box-sizing: border-box; }
 
+
+  .day {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  box-sizing: border-box;
+  background-color: #21262d;
+  border: 1px solid #30363d;
+}
+
+.day.level-1 {
+  background-color: #c4b5fd;
+  border-color: #c4b5fd;
+}
+
+.day.level-2 {
+  background-color: #a78bfa;
+  border-color: #a78bfa;
+}
+
+.day.level-3 {
+  background-color: #8b5cf6;
+  border-color: #8b5cf6;
+}
+
+.day.level-4 {
+  background-color: #6d28d9;
+  border-color: #6d28d9;
+}
+  
 body {
   margin: 0;
   padding: 25px 12px;
@@ -349,9 +379,9 @@ async function loadContributions(year) {
       const apiDay = dailyData.get(dateString);
       const count = Number(apiDay?.count) || 0;
       const level = Math.max(
-        0,
-        Math.min(4, Number(apiDay?.level) || 0)
-      );
+            0,
+            Math.min(4, Number(apiDay?.level) || 0)
+        );
 
       annualTotal += count;
 
